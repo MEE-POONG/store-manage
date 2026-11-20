@@ -5,11 +5,13 @@ import { usePOS } from "@/context/POSContext";
 import { Product } from "@/types/pos";
 import { SAMPLE_PRODUCT_IMAGES } from "@/lib/seed-data";
 import ProductImage from "@/components/ProductImage";
+import CameraBarcodeScannerModal from "@/components/CameraBarcodeScannerModal";
 import {
   AlertTriangle,
   ArrowDownUp,
   Barcode,
   Boxes,
+  Camera,
   Edit3,
   FolderPlus,
   History,
@@ -39,6 +41,8 @@ export default function InventoryView() {
     products,
     categories,
     stockLogs,
+    permissions,
+    openSwitchEmployeeModal,
     saveProduct,
     deleteProduct,
     adjustStock,
@@ -80,6 +84,11 @@ export default function InventoryView() {
   // Category Form State
   const [newCatName, setNewCatName] = useState("");
   const [newCatColor, setNewCatColor] = useState("bg-emerald-500");
+
+  // Camera Scanner Target ("search" = filter table, "form" = fill product form barcode)
+  const [cameraScanTarget, setCameraScanTarget] = useState<
+    "search" | "form" | null
+  >(null);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -228,28 +237,40 @@ export default function InventoryView() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs">
-            <span className="text-slate-500">มูลค่าสต็อกราคาทุน: </span>
-            <strong className="font-bold text-slate-900">
-              ฿
-              {totalInventoryValue.toLocaleString("th-TH", {
-                minimumFractionDigits: 2,
-              })}
-            </strong>
-          </div>
+          {permissions.canViewCostAndProfit && (
+            <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs">
+              <span className="text-slate-500">มูลค่าสต็อกราคาทุน: </span>
+              <strong className="font-bold text-slate-900">
+                ฿
+                {totalInventoryValue.toLocaleString("th-TH", {
+                  minimumFractionDigits: 2,
+                })}
+              </strong>
+            </div>
+          )}
           {lowStockCount > 0 && (
             <div className="flex items-center gap-1.5 rounded-xl bg-amber-100 px-3.5 py-2 text-xs font-semibold text-amber-800">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <span>สินค้าใกล้หมด/หมด {lowStockCount} รายการ</span>
             </div>
           )}
-          <button
-            onClick={openAddProduct}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <PackagePlus className="h-4 w-4" />
-            <span>เพิ่มสินค้าใหม่</span>
-          </button>
+          {permissions.canManageProducts ? (
+            <button
+              onClick={openAddProduct}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              <PackagePlus className="h-4 w-4" />
+              <span>เพิ่มสินค้าใหม่</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={openSwitchEmployeeModal}
+              className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100"
+            >
+              🔒 โหมดแคชเชียร์ (ดูสต็อกอย่างเดียว • คลิกสลับสิทธิ์)
+            </button>
+          )}
         </div>
       </div>
 
@@ -296,15 +317,26 @@ export default function InventoryView() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* Filters */}
           <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 sm:max-w-sm">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="ค้นหาชื่อสินค้า, บาร์โค้ด, หรือ SKU..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
-              />
+            <div className="flex flex-1 items-center gap-2 sm:max-w-md">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ค้นหาชื่อสินค้า, บาร์โค้ด, หรือ SKU..."
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setCameraScanTarget("search")}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+                title="ส่องกล้องสแกนบาร์โค้ดเพื่อค้นหาสินค้าในคลัง"
+              >
+                <Camera className="h-3.5 w-3.5 text-emerald-400" />
+                <span>สแกนค้นหา</span>
+              </button>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -351,10 +383,14 @@ export default function InventoryView() {
                   <th className="px-4 py-3">สินค้า</th>
                   <th className="px-4 py-3">บาร์โค้ด / SKU</th>
                   <th className="px-4 py-3">หมวดหมู่</th>
-                  <th className="px-4 py-3 text-right">ราคาทุน</th>
+                  {permissions.canViewCostAndProfit && (
+                    <th className="px-4 py-3 text-right">ราคาทุน</th>
+                  )}
                   <th className="px-4 py-3 text-right">ราคาขาย</th>
                   <th className="px-4 py-3 text-center">คงเหลือ</th>
-                  <th className="px-4 py-3 text-right">จัดการ</th>
+                  {permissions.canManageProducts && (
+                    <th className="px-4 py-3 text-right">จัดการ</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -408,16 +444,20 @@ export default function InventoryView() {
                           {cat?.name || "ไม่ระบุ"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600">
-                        ฿{p.cost.toFixed(2)}
-                      </td>
+                      {permissions.canViewCostAndProfit && (
+                        <td className="px-4 py-3 text-right text-slate-600">
+                          ฿{p.cost.toFixed(2)}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-right">
                         <div className="font-bold text-emerald-700">
                           ฿{p.price.toFixed(2)}
                         </div>
-                        <div className="text-[10px] text-slate-400">
-                          กำไร {margin}%
-                        </div>
+                        {permissions.canViewCostAndProfit && (
+                          <div className="text-[10px] text-slate-400">
+                            กำไร {margin}%
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span
@@ -432,37 +472,41 @@ export default function InventoryView() {
                           {p.stock} {p.unit}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setAdjustTarget(p);
-                              setAdjustType("in");
-                              setAdjustQty("12");
-                              setAdjustNote("");
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                            title="รับสินค้าเข้า / ปรับสต็อก"
-                          >
-                            <ArrowDownUp className="h-3.5 w-3.5" />
-                            <span>ปรับสต็อก</span>
-                          </button>
-                          <button
-                            onClick={() => openEditProduct(p)}
-                            className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                            title="แก้ไขสินค้า"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(p.id)}
-                            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                            title="ลบสินค้า"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
+                      {permissions.canManageProducts && (
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setAdjustTarget(p);
+                                setAdjustType("in");
+                                setAdjustQty("12");
+                                setAdjustNote("");
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                              title="รับสินค้าเข้า / ปรับสต็อก"
+                            >
+                              <ArrowDownUp className="h-3.5 w-3.5" />
+                              <span>ปรับสต็อก</span>
+                            </button>
+                            <button
+                              onClick={() => openEditProduct(p)}
+                              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                              title="แก้ไขสินค้า"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            {permissions.canDeleteProducts && (
+                              <button
+                                onClick={() => deleteProduct(p.id)}
+                                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                                title="ลบสินค้า (เฉพาะเจ้าของร้าน)"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -771,6 +815,15 @@ export default function InventoryView() {
                     />
                     <button
                       type="button"
+                      onClick={() => setCameraScanTarget("form")}
+                      title="เปิดกล้องสแกนบาร์โค้ดจากซองสินค้าจริง"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-slate-900 px-2.5 text-xs font-bold text-white hover:bg-slate-800"
+                    >
+                      <Camera className="h-4 w-4 text-emerald-400" />
+                      <span>กล้อง</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() =>
                         setFormBarcode(
                           `885${Math.floor(
@@ -1017,6 +1070,34 @@ export default function InventoryView() {
           </form>
         </div>
       )}
+
+      {/* CAMERA BARCODE SCANNER FOR INVENTORY SEARCH OR PRODUCT FORM */}
+      <CameraBarcodeScannerModal
+        isOpen={cameraScanTarget !== null}
+        onClose={() => setCameraScanTarget(null)}
+        continuousModeDefault={false}
+        title={
+          cameraScanTarget === "form"
+            ? "สแกนบาร์โค้ดเพื่อกรอกรหัสสินค้า"
+            : "สแกนบาร์โค้ดเพื่อค้นหาสินค้าในคลัง"
+        }
+        onDetected={(code) => {
+          if (cameraScanTarget === "form") {
+            setFormBarcode(code);
+            return {
+              ok: true,
+              message: `ดึงรหัสบาร์โค้ด ${code} เข้าฟอร์มสินค้าแล้ว`,
+            };
+          } else {
+            setSearch(code);
+            return {
+              ok: true,
+              message: `ค้นหารหัสบาร์โค้ด ${code} ในคลังสินค้าแล้ว`,
+            };
+          }
+        }}
+        sampleProducts={products}
+      />
     </div>
   );
 }

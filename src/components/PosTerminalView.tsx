@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePOS } from "@/context/POSContext";
 import { PaymentMethod, Product, SaleOrder } from "@/types/pos";
 import ReceiptModal from "@/components/ReceiptModal";
 import ProductImage from "@/components/ProductImage";
+import CameraBarcodeScannerModal from "@/components/CameraBarcodeScannerModal";
+import { playScannerBeep } from "@/lib/scanner-sound";
 import {
   AlertTriangle,
   Banknote,
   Barcode,
+  Camera,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -18,6 +21,7 @@ import {
   PlayCircle,
   Plus,
   QrCode,
+  Radio,
   Search,
   ShoppingCart,
   Sparkles,
@@ -57,6 +61,8 @@ export default function PosTerminalView() {
   // Modals
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isHeldModalOpen, setIsHeldModalOpen] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [globalScannerEnabled, setGlobalScannerEnabled] = useState(true);
   const [completedSale, setCompletedSale] = useState<SaleOrder | null>(null);
 
   // Checkout state
@@ -65,13 +71,108 @@ export default function PosTerminalView() {
   const [customerPhone, setCustomerPhone] = useState<string>("");
 
   const barcodeRef = useRef<HTMLInputElement>(null);
+  const scannerBufferRef = useRef<{ text: string; lastKeyTime: number }>({
+    text: "",
+    lastKeyTime: 0,
+  });
 
-  const showToast = (type: "success" | "error", text: string) => {
+  const showToast = useCallback((type: "success" | "error", text: string) => {
     setScanFeedback({ type, text });
     setTimeout(() => {
       setScanFeedback((prev) => (prev?.text === text ? null : prev));
-    }, 3000);
-  };
+    }, 3200);
+  }, []);
+
+  const executeBarcodeScan = useCallback(
+    (code: string, sourceLabel?: string) => {
+      const result = addByBarcode(code);
+      if (result.ok && result.product) {
+        playScannerBeep("success");
+        const prefix = sourceLabel ? `[${sourceLabel}] ` : "";
+        const msg = `${prefix}สแกนเพิ่ม "${result.product.name}" (฿${result.product.price}) ลงตะกร้าแล้ว`;
+        showToast("success", msg);
+        return { ok: true, message: msg };
+      } else {
+        playScannerBeep("error");
+        const errMsg = result.message || `ไม่พบสินค้ารหัส "${code}"`;
+        showToast("error", errMsg);
+        return { ok: false, message: errMsg };
+      }
+    },
+    [addByBarcode, showToast]
+  );
+
+  // Global Hardware Barcode Scanner Listener (USB / 2.4GHz / Bluetooth HID)
+  useEffect(() => {
+    if (
+      !globalScannerEnabled ||
+      isCheckoutOpen ||
+      isHeldModalOpen ||
+      isCameraScannerOpen ||
+      completedSale !== null
+    ) {
+      return;
+    }
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase() || "";
+      const isInputFocused =
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select" ||
+        target?.isContentEditable;
+
+      // If the user is already focused in our main barcode input box, let the form's onSubmit handle it
+      if (target === barcodeRef.current) {
+        return;
+      }
+
+      const now = Date.now();
+      const timeDiff = now - scannerBufferRef.current.lastKeyTime;
+
+      // Reset buffer if pause is too long (1.2s when no input focused, or 65ms when inside another input)
+      const maxGap = isInputFocused ? 65 : 1200;
+      if (timeDiff > maxGap) {
+        scannerBufferRef.current.text = "";
+      }
+
+      if (e.key === "Enter") {
+        const scannedCode = scannerBufferRef.current.text.trim();
+        const minLen = isInputFocused ? 6 : 3;
+        if (scannedCode.length >= minLen) {
+          e.preventDefault();
+          e.stopPropagation();
+          scannerBufferRef.current.text = "";
+          executeBarcodeScan(scannedCode, "เครื่องยิงอัตโนมัติ");
+        }
+        return;
+      }
+
+      if (
+        e.key.length === 1 &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        /^[a-zA-Z0-9\-_]$/.test(e.key)
+      ) {
+        scannerBufferRef.current.text += e.key;
+        scannerBufferRef.current.lastKeyTime = now;
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown, true);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown, true);
+    };
+  }, [
+    globalScannerEnabled,
+    isCheckoutOpen,
+    isHeldModalOpen,
+    isCameraScannerOpen,
+    completedSale,
+    executeBarcodeScan,
+  ]);
 
   // Filtered products for the grid
   const filteredProducts = useMemo(() => {
@@ -124,15 +225,9 @@ export default function PosTerminalView() {
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
-    const result = addByBarcode(barcodeInput);
-    if (result.ok && result.product) {
-      showToast(
-        "success",
-        `สแกนเพิ่ม "${result.product.name}" (฿${result.product.price}) ลงตะกร้าแล้ว`
-      );
+    const res = executeBarcodeScan(barcodeInput);
+    if (res.ok) {
       setBarcodeInput("");
-    } else {
-      showToast("error", result.message || "ไม่พบสินค้า");
     }
   };
 
@@ -140,18 +235,13 @@ export default function PosTerminalView() {
   const handleSimulateScan = () => {
     const available = products.filter((p) => p.isActive && p.stock > 0);
     if (available.length === 0) {
+      playScannerBeep("error");
       showToast("error", "ไม่มีสินค้าที่มีสต็อกพร้อมขาย");
       return;
     }
     const randomProd =
       available[Math.floor(Math.random() * available.length)];
-    const res = addByBarcode(randomProd.barcode);
-    if (res.ok) {
-      showToast(
-        "success",
-        `[จำลองสแกน ${randomProd.barcode}] เพิ่ม "${randomProd.name}" สำเร็จ`
-      );
-    }
+    executeBarcodeScan(randomProd.barcode, `จำลองยิง ${randomProd.barcode}`);
   };
 
   const handleProductClick = (product: Product) => {
@@ -225,15 +315,26 @@ export default function PosTerminalView() {
               </button>
             </form>
 
+            {/* Camera Barcode Scanner Button */}
+            <button
+              type="button"
+              onClick={() => setIsCameraScannerOpen(true)}
+              title="เปิดกล้องมือถือ / แท็บเล็ต / เว็บแคม เพื่อส่องสแกนบาร์โค้ดสินค้าจริง"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
+            >
+              <Camera className="h-4 w-4 text-emerald-400" />
+              <span>สแกนด้วยกล้อง</span>
+            </button>
+
             {/* Quick Simulate Barcode Button */}
             <button
               type="button"
               onClick={handleSimulateScan}
               title="จำลองการยิงบาร์โค้ดสินค้าแบบสุ่มเพื่อทดสอบระบบ"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
             >
               <Sparkles className="h-4 w-4" />
-              <span>ทดลองยิงบาร์โค้ด</span>
+              <span>ทดลองยิง</span>
             </button>
 
             {/* Search Filter Input */}
@@ -255,6 +356,33 @@ export default function PosTerminalView() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Global Hardware Scanner Status Strip */}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setGlobalScannerEnabled(!globalScannerEnabled)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold transition ${
+                globalScannerEnabled
+                  ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  : "bg-slate-200/70 text-slate-600 hover:bg-slate-200"
+              }`}
+              title="คลิกเพื่อเปิด/ปิดโหมดดักจับเครื่องยิงบาร์โค้ด USB อัตโนมัติทั่วหน้าจอ"
+            >
+              <Radio
+                className={`h-3.5 w-3.5 ${
+                  globalScannerEnabled
+                    ? "animate-pulse text-emerald-600"
+                    : "text-slate-400"
+                }`}
+              />
+              <span>
+                {globalScannerEnabled
+                  ? "โหมดรับเครื่องยิงบาร์โค้ดอัตโนมัติ: เปิดอยู่ (ยิงได้ทันทีโดยไม่ต้องคลิกช่อง)"
+                  : "โหมดรับเครื่องยิงบาร์โค้ดอัตโนมัติ: ปิดอยู่"}
+              </span>
+            </button>
           </div>
 
           {/* Scan Toast Feedback */}
@@ -945,6 +1073,14 @@ export default function PosTerminalView() {
           </div>
         </div>
       )}
+
+      {/* CAMERA BARCODE SCANNER MODAL */}
+      <CameraBarcodeScannerModal
+        isOpen={isCameraScannerOpen}
+        onClose={() => setIsCameraScannerOpen(false)}
+        onDetected={(code) => executeBarcodeScan(code, "กล้องสแกน")}
+        sampleProducts={products.filter((p) => p.isActive && p.stock > 0)}
+      />
 
       {/* RECEIPT PREVIEW / PRINT MODAL */}
       <ReceiptModal

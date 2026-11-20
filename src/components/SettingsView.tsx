@@ -17,6 +17,8 @@ export default function SettingsView() {
     categories,
     sales,
     stockLogs,
+    permissions,
+    openSwitchEmployeeModal,
     updateSettings,
     resetToDemoData,
   } = usePOS();
@@ -63,6 +65,22 @@ export default function SettingsView() {
           กำหนดข้อมูลร้านค้า เลขผู้เสียภาษี เบอร์พร้อมเพย์รับเงิน และจัดการข้อมูลในเครื่อง (LocalStorage)
         </p>
       </div>
+
+      {!permissions.canManageSettings && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+          <span>
+            🔒 เฉพาะบัญชีตำแหน่ง <strong>เจ้าของร้าน (Owner)</strong>{" "}
+            เท่านั้นที่สามารถบันทึกการแก้ไขตั้งค่าร้านค้าหรือรีเซ็ตระบบได้
+          </span>
+          <button
+            type="button"
+            onClick={openSwitchEmployeeModal}
+            className="rounded-xl bg-amber-600 px-3.5 py-2 font-bold text-white hover:bg-amber-700"
+          >
+            สลับเป็นเจ้าของร้าน (PIN: 1111)
+          </button>
+        </div>
+      )}
 
       <form
         onSubmit={handleSave}
@@ -226,7 +244,8 @@ export default function SettingsView() {
 
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+            disabled={!permissions.canManageSettings}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             <Save className="h-4 w-4" />
             <span>บันทึกการตั้งค่า</span>
@@ -255,13 +274,14 @@ export default function SettingsView() {
 
           <button
             type="button"
+            disabled={!permissions.canManageSettings}
             onClick={() => {
               resetToDemoData();
               setForm({
                 ...settings,
               });
             }}
-            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100"
+            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw className="h-4 w-4" />
             <span>รีเซ็ตเป็นข้อมูลตัวอย่างเริ่มต้น (Reset Demo Data)</span>

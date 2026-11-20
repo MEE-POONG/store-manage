@@ -1,10 +1,59 @@
 import {
   Category,
+  DailyCashDrawer,
+  Employee,
   Product,
   SaleOrder,
   StockLog,
   StoreSettings,
 } from "@/types/pos";
+
+export const DEFAULT_EMPLOYEES: Employee[] = [
+  {
+    id: "emp-1",
+    code: "EMP-001",
+    name: "คุณพลอย (เจ้าของร้าน)",
+    role: "owner",
+    pin: "1111",
+    phone: "081-234-5678",
+    avatarColor: "bg-emerald-600",
+    isActive: true,
+    createdAt: "2026-01-01T08:00:00.000Z",
+  },
+  {
+    id: "emp-2",
+    code: "EMP-002",
+    name: "คุณนนท์ (ผู้จัดการร้าน)",
+    role: "manager",
+    pin: "2222",
+    phone: "089-555-1234",
+    avatarColor: "bg-indigo-600",
+    isActive: true,
+    createdAt: "2026-02-01T08:00:00.000Z",
+  },
+  {
+    id: "emp-3",
+    code: "EMP-003",
+    name: "น้องเมย์ (แคชเชียร์กะเช้า)",
+    role: "cashier",
+    pin: "3333",
+    phone: "082-333-4444",
+    avatarColor: "bg-sky-600",
+    isActive: true,
+    createdAt: "2026-03-15T08:00:00.000Z",
+  },
+  {
+    id: "emp-4",
+    code: "EMP-004",
+    name: "น้องภูมิ (แคชเชียร์กะบ่าย)",
+    role: "cashier",
+    pin: "4444",
+    phone: "086-777-8888",
+    avatarColor: "bg-amber-600",
+    isActive: true,
+    createdAt: "2026-04-10T08:00:00.000Z",
+  },
+];
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: "cat-drinks", name: "เครื่องดื่ม & น้ำอัดลม", color: "bg-sky-500" },
@@ -360,6 +409,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   vatIncluded: true,
   receiptFooter: "ขอบคุณที่ใช้บริการ สินค้าซื้อแล้วไม่รับเปลี่ยนคืน",
   cashierName: "พนักงานแคชเชียร์ #1",
+  defaultOpeningCash: 1000,
 };
 
 const now = new Date();
@@ -519,6 +569,151 @@ export const DEFAULT_SALES: SaleOrder[] = [
     status: "completed",
     createdAt: hoursAgo(1),
   },
+  {
+    id: "sale-4",
+    receiptNo: "INV-20261113-0001",
+    items: [
+      {
+        productId: "prod-3",
+        sku: "DRK-003",
+        barcode: "8858891300125",
+        name: "ชาเขียวอิชิตัน รสน้ำผึ้งมะนาว 420 มล.",
+        price: 20,
+        cost: 14.5,
+        quantity: 3,
+        unit: "ขวด",
+        subtotal: 60,
+      },
+      {
+        productId: "prod-8",
+        sku: "SNK-003",
+        barcode: "8850157400107",
+        name: "ป๊อกกี้ รสช็อกโกแลต 47 กรัม",
+        price: 22,
+        cost: 16.5,
+        quantity: 2,
+        unit: "กล่อง",
+        subtotal: 44,
+      },
+    ],
+    subtotal: 104,
+    discount: 0,
+    vatAmount: 6.8,
+    total: 104,
+    totalCost: 76.5,
+    profit: 27.5,
+    paymentMethod: "transfer",
+    cashierName: "พนักงานแคชเชียร์ #1",
+    status: "completed",
+    createdAt: hoursAgo(25),
+  },
+  {
+    id: "sale-5",
+    receiptNo: "INV-20261113-0002",
+    items: [
+      {
+        productId: "prod-11",
+        sku: "INS-002",
+        barcode: "8850987101087",
+        name: "มาม่าคัพ รสหมูสับ 60 กรัม",
+        price: 15,
+        cost: 11.5,
+        quantity: 4,
+        unit: "ถ้วย",
+        subtotal: 60,
+      },
+      {
+        productId: "prod-12",
+        sku: "INS-003",
+        barcode: "8850144201051",
+        name: "ปลากระป๋อง โรซ่า ในซอสมะเขือเทศ 155 กรัม",
+        price: 22,
+        cost: 17,
+        quantity: 3,
+        unit: "กระป๋อง",
+        subtotal: 66,
+      },
+    ],
+    subtotal: 126,
+    discount: 6,
+    vatAmount: 7.85,
+    total: 120,
+    totalCost: 97,
+    profit: 23,
+    paymentMethod: "cash",
+    cashReceived: 150,
+    changeAmount: 30,
+    cashierName: "พนักงานแคชเชียร์ #1",
+    status: "completed",
+    createdAt: hoursAgo(28),
+  },
+  {
+    id: "sale-6",
+    receiptNo: "INV-20261112-0001",
+    items: [
+      {
+        productId: "prod-16",
+        sku: "PER-002",
+        barcode: "8851932350112",
+        name: "สบู่เหลวลักส์ เมจิกคอล ออร์คิด 190 มล.",
+        price: 65,
+        cost: 48,
+        quantity: 2,
+        unit: "ขวด",
+        subtotal: 130,
+      },
+      {
+        productId: "prod-13",
+        sku: "DRY-001",
+        barcode: "8850188801016",
+        name: "นมสดเมจิ พาสเจอร์ไรส์ รสจืด 200 มล.",
+        price: 13.5,
+        cost: 10,
+        quantity: 2,
+        unit: "ขวด",
+        subtotal: 27,
+      },
+    ],
+    subtotal: 157,
+    discount: 0,
+    vatAmount: 10.27,
+    total: 157,
+    totalCost: 116,
+    profit: 41,
+    paymentMethod: "promptpay",
+    cashierName: "พนักงานแคชเชียร์ #1",
+    status: "completed",
+    createdAt: hoursAgo(50),
+  },
+  {
+    id: "sale-7",
+    receiptNo: "INV-20261112-0002",
+    items: [
+      {
+        productId: "prod-5",
+        sku: "DRK-005",
+        barcode: "8850228000556",
+        name: "สปอนเซอร์ ออริจินัล 250 มล.",
+        price: 13,
+        cost: 9.5,
+        quantity: 5,
+        unit: "ขวด",
+        subtotal: 65,
+      },
+    ],
+    subtotal: 65,
+    discount: 0,
+    vatAmount: 4.25,
+    total: 65,
+    totalCost: 47.5,
+    profit: 17.5,
+    paymentMethod: "cash",
+    cashReceived: 100,
+    changeAmount: 35,
+    cashierName: "พนักงานแคชเชียร์ #1",
+    status: "completed",
+    createdAt: hoursAgo(53),
+  },
 ];
 
 export const DEFAULT_STOCK_LOGS: StockLog[] = [
@@ -547,3 +742,48 @@ export const DEFAULT_STOCK_LOGS: StockLog[] = [
     createdAt: hoursAgo(1),
   },
 ];
+
+function toDateKey(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+const todayDateKey = toDateKey(now.toISOString());
+const yesterdayDateKey = toDateKey(hoursAgo(25));
+const twoDaysAgoDateKey = toDateKey(hoursAgo(50));
+
+export const DEFAULT_CASH_DRAWERS: Record<string, DailyCashDrawer> = {
+  [todayDateKey]: {
+    dateKey: todayDateKey,
+    openingCash: 1000,
+    movements: [],
+    status: "open",
+    openedAt: hoursAgo(8),
+    note: "เงินทอนตั้งต้นเปิดร้าน (แบงก์ย่อยและเหรียญ)",
+  },
+  [yesterdayDateKey]: {
+    dateKey: yesterdayDateKey,
+    openingCash: 1000,
+    movements: [],
+    actualClosingCash: 1120,
+    status: "closed",
+    openedAt: hoursAgo(32),
+    closedAt: hoursAgo(20),
+    closedBy: "พนักงานแคชเชียร์ #1",
+    note: "ปิดกะเมื่อวาน เงินสดในลิ้นชักครบพอดี",
+  },
+  [twoDaysAgoDateKey]: {
+    dateKey: twoDaysAgoDateKey,
+    openingCash: 1000,
+    movements: [],
+    actualClosingCash: 1065,
+    status: "closed",
+    openedAt: hoursAgo(56),
+    closedAt: hoursAgo(44),
+    closedBy: "พนักงานแคชเชียร์ #1",
+    note: "ปิดกะเรียบร้อย เงินครบพอดี",
+  },
+};

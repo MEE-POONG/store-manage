@@ -1,5 +1,28 @@
 export type PaymentMethod = "cash" | "promptpay" | "transfer" | "card";
 
+export type EmployeeRole = "owner" | "manager" | "cashier";
+
+export interface Employee {
+  id: string;
+  code: string;
+  name: string;
+  role: EmployeeRole;
+  pin: string; // 4-digit PIN
+  phone: string;
+  avatarColor: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface RolePermissions {
+  canViewCostAndProfit: boolean;
+  canManageProducts: boolean;
+  canDeleteProducts: boolean;
+  canVoidSales: boolean;
+  canManageEmployees: boolean;
+  canManageSettings: boolean;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -61,7 +84,9 @@ export interface SaleOrder {
   cashReceived?: number;
   changeAmount?: number;
   customerPhone?: string;
+  cashierId?: string;
   cashierName: string;
+  voidedBy?: string;
   status: "completed" | "voided";
   createdAt: string;
 }
@@ -76,7 +101,29 @@ export interface StockLog {
   previousStock: number;
   newStock: number;
   note: string;
+  performedBy?: string;
   createdAt: string;
+}
+
+export interface CashDrawerMovement {
+  id: string;
+  type: "in" | "out";
+  amount: number;
+  note: string;
+  performedBy?: string;
+  createdAt: string;
+}
+
+export interface DailyCashDrawer {
+  dateKey: string; // YYYY-MM-DD
+  openingCash: number; // เงินทอนตั้งต้นประจำวัน
+  movements: CashDrawerMovement[]; // รายการนำเงินสดเข้า/ออกลิ้นชักระหว่างวัน
+  actualClosingCash?: number; // ยอดเงินสดที่นับได้จริงตอนปิดกะ
+  status: "open" | "closed";
+  openedAt: string;
+  closedAt?: string;
+  closedBy?: string;
+  note?: string;
 }
 
 export interface StoreSettings {
@@ -90,4 +137,5 @@ export interface StoreSettings {
   vatIncluded: boolean;
   receiptFooter: string;
   cashierName: string;
+  defaultOpeningCash?: number;
 }
