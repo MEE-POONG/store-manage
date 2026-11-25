@@ -82,6 +82,7 @@ export default function CameraBarcodeScannerModal({
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileCameraInputRef = useRef<HTMLInputElement>(null);
 
   const stopCamera = useCallback(() => {
     if (rafRef.current) {
@@ -357,6 +358,24 @@ export default function CameraBarcodeScannerModal({
               </button>
 
               <input
+                ref={mobileCameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageScan}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => mobileCameraInputRef.current?.click()}
+                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 font-bold text-white shadow-sm hover:bg-emerald-700"
+                title="เปิดแอปกล้องถ่ายรูปบาร์โค้ดโดยตรง (ใช้งานได้แม้เชื่อมต่อมือถือผ่าน HTTP Wi-Fi)"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                <span>ถ่ายรูปบาร์โค้ด</span>
+              </button>
+
+              <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
@@ -369,7 +388,7 @@ export default function CameraBarcodeScannerModal({
                 className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 font-semibold text-indigo-700 hover:bg-indigo-100"
               >
                 <ImageIcon className="h-3.5 w-3.5" />
-                <span>สแกนจากรูปภาพ</span>
+                <span>เลือกรูป</span>
               </button>
             </div>
 
@@ -413,6 +432,14 @@ export default function CameraBarcodeScannerModal({
                 <p className="max-w-md text-xs font-medium leading-relaxed text-slate-200">
                   {cameraError}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => mobileCameraInputRef.current?.click()}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-700"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span>กดถ่ายรูปบาร์โค้ดด้วยกล้องมือถือ</span>
+                </button>
               </div>
             )}
           </div>

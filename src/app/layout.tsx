@@ -1,11 +1,27 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { POSProvider } from "@/context/POSContext";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#059669",
+};
 
 export const metadata: Metadata = {
   title: "SabaiPOS | ระบบขายหน้าร้านและจัดการสต็อก (Retail & Minimart POS)",
   description:
-    "ระบบ POS สำหรับร้านค้าปลีกและมินิมาร์ท พัฒนาด้วย Next.js รองรับสแกนบาร์โค้ด ตัดสต็อก พักบิล พร้อมเพย์ QR และสรุปยอดขาย",
+    "ระบบ POS สำหรับร้านค้าปลีกและมินิมาร์ท พัฒนาด้วย Next.js รองรับมือถือ แท็บเล็ต สแกนบาร์โค้ด ตัดสต็อก พักบิล พร้อมเพย์ QR และสรุปยอดขาย",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SabaiPOS",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

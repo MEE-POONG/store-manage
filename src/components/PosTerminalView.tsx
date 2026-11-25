@@ -13,6 +13,7 @@ import {
   Barcode,
   Camera,
   CheckCircle2,
+  ChevronUp,
   Clock,
   CreditCard,
   Landmark,
@@ -62,6 +63,7 @@ export default function PosTerminalView() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isHeldModalOpen, setIsHeldModalOpen] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [globalScannerEnabled, setGlobalScannerEnabled] = useState(true);
   const [completedSale, setCompletedSale] = useState<SaleOrder | null>(null);
 
@@ -287,65 +289,78 @@ export default function PosTerminalView() {
   };
 
   return (
-    <div className="grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 p-4 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-4 p-2.5 sm:p-4 lg:h-[calc(100vh-4rem)] lg:grid-cols-12">
       {/* LEFT AREA: Barcode Scanner, Categories, Product Grid */}
       <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-8">
         {/* Top Bar: Barcode Input & Search */}
-        <div className="border-b border-slate-100 bg-slate-50/70 p-3.5">
-          <div className="flex flex-col gap-2.5 sm:flex-row">
+        <div className="border-b border-slate-100 bg-slate-50/70 p-3 sm:p-3.5">
+          <div className="flex flex-col gap-2 sm:flex-row">
             {/* Barcode Scanner Input */}
             <form
               onSubmit={handleBarcodeSubmit}
               className="relative flex flex-1 items-center"
             >
-              <Barcode className="pointer-events-none absolute left-3.5 h-5 w-5 text-emerald-600" />
+              <Barcode className="pointer-events-none absolute left-3 h-5 w-5 text-emerald-600" />
               <input
                 ref={barcodeRef}
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
-                placeholder="ยิงบาร์โค้ด หรือพิมพ์รหัส SKU แล้วกด Enter (เช่น 8850999320001)"
-                className="w-full rounded-xl border border-emerald-300 bg-white py-2.5 pl-11 pr-24 text-sm text-slate-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="ยิงบาร์โค้ด หรือพิมพ์รหัส SKU..."
+                className="w-full rounded-xl border border-emerald-300 bg-white py-2.5 pl-10 pr-20 text-sm text-slate-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
               <button
                 type="submit"
                 className="absolute right-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
               >
-                สแกนเพิ่ม
+                เพิ่ม
               </button>
             </form>
 
-            {/* Camera Barcode Scanner Button */}
-            <button
-              type="button"
-              onClick={() => setIsCameraScannerOpen(true)}
-              title="เปิดกล้องมือถือ / แท็บเล็ต / เว็บแคม เพื่อส่องสแกนบาร์โค้ดสินค้าจริง"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
-            >
-              <Camera className="h-4 w-4 text-emerald-400" />
-              <span>สแกนด้วยกล้อง</span>
-            </button>
+            {/* Action Buttons Row on Mobile */}
+            <div className="grid grid-cols-3 gap-1.5 sm:flex">
+              {/* Camera Barcode Scanner Button */}
+              <button
+                type="button"
+                onClick={() => setIsCameraScannerOpen(true)}
+                title="เปิดกล้องมือถือ / แท็บเล็ต / เว็บแคม เพื่อส่องสแกนบาร์โค้ดสินค้าจริง"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800"
+              >
+                <Camera className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span className="truncate">สแกนกล้อง</span>
+              </button>
 
-            {/* Quick Simulate Barcode Button */}
-            <button
-              type="button"
-              onClick={handleSimulateScan}
-              title="จำลองการยิงบาร์โค้ดสินค้าแบบสุ่มเพื่อทดสอบระบบ"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>ทดลองยิง</span>
-            </button>
+              {/* Quick Simulate Barcode Button */}
+              <button
+                type="button"
+                onClick={handleSimulateScan}
+                title="จำลองการยิงบาร์โค้ดสินค้าแบบสุ่มเพื่อทดสอบระบบ"
+                className="inline-flex items-center justify-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2.5 py-2.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+              >
+                <Sparkles className="h-4 w-4 shrink-0" />
+                <span className="truncate">ทดลองยิง</span>
+              </button>
+
+              {/* Mobile Quick Held Orders Button */}
+              <button
+                type="button"
+                onClick={() => setIsHeldModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2.5 text-xs font-bold text-amber-800 lg:hidden"
+              >
+                <Clock className="h-4 w-4 shrink-0 text-amber-600" />
+                <span className="truncate">บิลพัก ({heldOrders.length})</span>
+              </button>
+            </div>
 
             {/* Search Filter Input */}
-            <div className="relative sm:w-64">
+            <div className="relative sm:w-56">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อสินค้า / รหัส..."
-                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-800 transition focus:border-slate-400 focus:outline-none"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm text-slate-800 transition focus:border-slate-400 focus:outline-none sm:py-2.5"
               />
               {searchQuery && (
                 <button
@@ -556,8 +571,22 @@ export default function PosTerminalView() {
         </div>
       </div>
 
-      {/* RIGHT AREA: Cart & Checkout Panel */}
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-4">
+      {/* MOBILE CART BACKDROP */}
+      {isMobileCartOpen && (
+        <div
+          onClick={() => setIsMobileCartOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      {/* RIGHT AREA: Cart & Checkout Panel (Inline on Desktop lg+, Slide-up Drawer on Mobile) */}
+      <div
+        className={`flex flex-col overflow-hidden bg-white shadow-sm lg:col-span-4 lg:rounded-2xl lg:border lg:border-slate-200 ${
+          isMobileCartOpen
+            ? "fixed inset-x-0 bottom-0 z-50 max-h-[86vh] rounded-t-3xl shadow-2xl"
+            : "hidden lg:flex"
+        }`}
+      >
         {/* Cart Header */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-900 px-4 py-3.5 text-white">
           <div className="flex items-center gap-2">
@@ -593,6 +622,7 @@ export default function PosTerminalView() {
                 type="button"
                 onClick={() => {
                   holdCurrentOrder();
+                  setIsMobileCartOpen(false);
                   showToast("success", "พักบิลปัจจุบันเรียบร้อยแล้ว");
                 }}
                 className="inline-flex items-center gap-1 rounded-lg bg-amber-500/20 px-2.5 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/30"
@@ -614,6 +644,16 @@ export default function PosTerminalView() {
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
+
+            {/* Close Mobile Cart Drawer Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileCartOpen(false)}
+              className="ml-1 rounded-lg bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700 lg:hidden"
+              title="ย่อหน้าต่างตะกร้า"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
@@ -789,7 +829,10 @@ export default function PosTerminalView() {
           <button
             type="button"
             disabled={cart.length === 0}
-            onClick={openCheckoutModal}
+            onClick={() => {
+              setIsMobileCartOpen(false);
+              openCheckoutModal();
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 text-base font-bold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <Banknote className="h-5 w-5" />
@@ -797,6 +840,42 @@ export default function PosTerminalView() {
           </button>
         </div>
       </div>
+
+      {/* FLOATING MOBILE CART BAR (Shown on screens < lg when items are in cart) */}
+      {cart.length > 0 && !isMobileCartOpen && (
+        <div className="fixed inset-x-3 bottom-[4.35rem] z-30 flex items-center justify-between gap-2 rounded-2xl bg-slate-900 p-2.5 text-white shadow-xl ring-1 ring-white/10 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileCartOpen(true)}
+            className="flex flex-1 items-center gap-2.5 text-left"
+          >
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 font-extrabold text-white">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-extrabold text-slate-950">
+                {totalItemsCount}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1 text-xs font-bold text-emerald-400">
+                <span>ดูตะกร้า / แก้ไข</span>
+                <ChevronUp className="h-3.5 w-3.5" />
+              </div>
+              <p className="truncate text-base font-extrabold text-white">
+                ฿{netTotal.toFixed(2)}
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={openCheckoutModal}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-sm active:scale-95"
+          >
+            <Banknote className="h-4 w-4" />
+            <span>คิดเงินทันที</span>
+          </button>
+        </div>
+      )}
 
       {/* CHECKOUT PAYMENT MODAL */}
       {isCheckoutOpen && (

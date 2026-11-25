@@ -18,7 +18,6 @@ import {
   Settings,
   ShoppingCart,
   Store,
-  UserCheck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -99,6 +98,7 @@ export default function HomePage() {
   const navItems: {
     id: ActiveTab;
     label: string;
+    shortLabel: string;
     icon: React.ElementType;
     badge?: number;
     badgeStyle?: string;
@@ -106,6 +106,7 @@ export default function HomePage() {
     {
       id: "pos",
       label: "ขายหน้าร้าน (POS)",
+      shortLabel: "ขายสินค้า",
       icon: ShoppingCart,
       badge: cartCount > 0 ? cartCount : undefined,
       badgeStyle: "bg-emerald-500 text-white",
@@ -113,6 +114,7 @@ export default function HomePage() {
     {
       id: "inventory",
       label: "สินค้า & สต็อก",
+      shortLabel: "สต็อก",
       icon: Boxes,
       badge: lowStockCount > 0 ? lowStockCount : undefined,
       badgeStyle: "bg-amber-500 text-slate-950",
@@ -120,21 +122,25 @@ export default function HomePage() {
     {
       id: "sales",
       label: "ประวัติบิลขาย",
+      shortLabel: "บิลขาย",
       icon: Receipt,
     },
     {
       id: "dashboard",
       label: "แดชบอร์ดสรุปยอด",
+      shortLabel: "สรุปยอด",
       icon: BarChart3,
     },
     {
       id: "employees",
       label: "พนักงาน & สิทธิ์",
+      shortLabel: "พนักงาน",
       icon: Users,
     },
     {
       id: "settings",
       label: "ตั้งค่าร้าน",
+      shortLabel: "ตั้งค่า",
       icon: Settings,
     },
   ];
@@ -144,27 +150,29 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-100">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm print:hidden sm:px-6">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-3 shadow-sm print:hidden sm:h-16 sm:px-6">
         {/* Brand & Store Name */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 sm:h-10 sm:w-10">
             <Store className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-base font-extrabold tracking-tight text-slate-900">
+              <span className="truncate text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
                 {settings.storeName}
               </span>
-              <span className="hidden rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 sm:inline-block">
+              <span className="hidden rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 md:inline-block">
                 Retail POS
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">{settings.branchName}</p>
+            <p className="truncate text-[10px] text-slate-400 sm:text-[11px]">
+              {settings.branchName}
+            </p>
           </div>
         </div>
 
-        {/* Center Navigation Pills */}
-        <nav className="flex items-center gap-1 overflow-x-auto py-1">
+        {/* Center Navigation Pills (Desktop Only: lg+) */}
+        <nav className="hidden items-center gap-1 overflow-x-auto py-1 lg:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -197,11 +205,11 @@ export default function HomePage() {
         </nav>
 
         {/* Right: Cash Drawer Status Button & Interactive Employee Switcher */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => openCashDrawerModal(todayKey)}
-            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition sm:px-3 ${
               todayDrawer.status === "open"
                 ? "border-emerald-200 bg-emerald-50/80 text-emerald-800 hover:bg-emerald-100"
                 : "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
@@ -209,15 +217,16 @@ export default function HomePage() {
             title="จัดการเงินทอนตั้งต้น & นับเงินสดในลิ้นชัก (เปิด-ปิดกะ)"
           >
             {todayDrawer.status === "open" ? (
-              <Wallet className="h-4 w-4 text-emerald-600" />
+              <Wallet className="h-3.5 w-3.5 text-emerald-600 sm:h-4 sm:w-4" />
             ) : (
-              <Lock className="h-4 w-4 text-amber-600" />
+              <Lock className="h-3.5 w-3.5 text-amber-600 sm:h-4 sm:w-4" />
             )}
             <span className="hidden md:inline">ลิ้นชัก:</span>
             <span className="font-extrabold">
               ฿
               {todayExpectedCash.toLocaleString("th-TH", {
-                minimumFractionDigits: 2,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
               })}
             </span>
           </button>
@@ -225,21 +234,21 @@ export default function HomePage() {
           <button
             type="button"
             onClick={openSwitchEmployeeModal}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs transition hover:border-emerald-400 hover:bg-emerald-50/40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs transition hover:border-emerald-400 hover:bg-emerald-50/40 sm:px-3"
             title="คลิกเพื่อสลับพนักงานแคชเชียร์ / กดรหัส PIN 4 หลัก"
           >
             <div
-              className={`flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-extrabold text-white ${currentEmployee.avatarColor}`}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white ${currentEmployee.avatarColor}`}
             >
               {currentEmployee.name.slice(0, 2)}
             </div>
-            <div className="hidden text-left lg:block">
-              <div className="flex items-center gap-1.5">
-                <span className="max-w-[130px] truncate font-bold text-slate-900">
-                  {currentEmployee.name}
+            <div className="text-left">
+              <div className="flex items-center gap-1">
+                <span className="max-w-[72px] truncate text-[11px] font-bold text-slate-900 sm:max-w-[130px] sm:text-xs">
+                  {currentEmployee.name.split(" ")[0]}
                 </span>
                 <span
-                  className={`rounded border px-1.5 py-0.2 text-[9px] font-bold ${roleBadge.badgeStyle}`}
+                  className={`hidden rounded border px-1.5 py-0.2 text-[9px] font-bold sm:inline-block ${roleBadge.badgeStyle}`}
                 >
                   {currentEmployee.role === "owner"
                     ? "เจ้าของร้าน"
@@ -249,13 +258,12 @@ export default function HomePage() {
                 </span>
               </div>
             </div>
-            <UserCheck className="h-3.5 w-3.5 text-emerald-600 lg:hidden" />
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main>
+      {/* Main Content Area (padded at bottom on mobile for bottom nav) */}
+      <main className="pb-20 lg:pb-0">
         {activeTab === "pos" && <PosTerminalView />}
         {activeTab === "inventory" && <InventoryView />}
         {activeTab === "sales" && <SalesHistoryView />}
@@ -263,6 +271,40 @@ export default function HomePage() {
         {activeTab === "employees" && <EmployeesView />}
         {activeTab === "settings" && <SettingsView />}
       </main>
+
+      {/* Mobile Bottom Navigation Bar (Shown on screens < lg) */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white/95 px-1 backdrop-blur-md print:hidden lg:hidden">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id)}
+              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-bold transition ${
+                isActive ? "text-emerald-600" : "text-slate-500"
+              }`}
+            >
+              <div
+                className={`relative flex h-7 w-11 items-center justify-center rounded-xl transition ${
+                  isActive ? "bg-emerald-50 text-emerald-600" : ""
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.badge !== undefined && (
+                  <span
+                    className={`absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-extrabold shadow ${item.badgeStyle}`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+              <span className="truncate">{item.shortLabel}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Global Modals */}
       <CashDrawerModal />
