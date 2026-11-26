@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { POSProvider } from "@/context/POSContext";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -11,7 +10,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SabaiPOS | ระบบขายหน้าร้านและจัดการสต็อก (Retail & Minimart POS)",
+  title: "SabaiPOS | ระบบ POS ให้เช่า สำหรับร้านค้าปลีกและมินิมาร์ท",
   description:
     "ระบบ POS สำหรับร้านค้าปลีกและมินิมาร์ท พัฒนาด้วย Next.js รองรับมือถือ แท็บเล็ต สแกนบาร์โค้ด ตัดสต็อก พักบิล พร้อมเพย์ QR และสรุปยอดขาย",
   appleWebApp: {
@@ -32,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className="font-sans">
-        <POSProvider>{children}</POSProvider>
+        {children}
       </body>
     </html>
   );

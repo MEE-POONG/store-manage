@@ -34,6 +34,29 @@
    - แก้ไขชื่อร้าน สาขา เลขประจำตัวผู้เสียภาษี เบอร์พร้อมเพย์ และอัตรา VAT
    - สำรองข้อมูลทั้งหมดเป็นไฟล์ `.json` (Export JSON) หรือรีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้น
 
+## เดโมระบบเช่าแพ็กเกจ (Plan Rental, Multi-tenant)
+
+แอป Next.js ตัวเดียวแยกเว็บตาม hostname ผ่าน `src/middleware.ts`
+
+| URL | หน้าที่ |
+| --- | --- |
+| `http://store-management.localhost:3000` | เว็บเช่าแพ็กเกจ: ราคา → สมัคร + ตั้งชื่อร้าน (slug) → ชำระเงิน |
+| `http://store-management.localhost:3000/admin` | หลังบ้าน: ร้านทั้งหมด, คำสั่งซื้อ, webhook log, ปุ่มล้างข้อมูลเดโม |
+| `http://<slug>.localhost:3000` | POS ของแต่ละร้าน (ต้องล็อกอินด้วยบัญชีเจ้าของ) |
+
+ขั้นตอนเดโม
+1. `npm install` แล้ว `npm run dev`
+2. เปิด `http://store-management.localhost:3000` (Chrome/Edge/Firefox รู้จัก `*.localhost` อยู่แล้ว ไม่ต้องแก้ไฟล์ hosts)
+3. เลือกแพ็กเกจ → กรอกชื่อร้านและ slug (เช็คชื่อซ้ำทันที) → กดไปหน้าชำระเงิน
+4. ชำระด้วยบัตรทดสอบ `4242 4242 4242 4242` (ผ่าน) หรือ `4000 0000 0000 0002` (ถูกปฏิเสธ) หรือแท็บพร้อมเพย์
+5. ระบบจำลอง gateway ยิง webhook (มีลายเซ็น HMAC) มาที่ `/api/webhooks/payment` → สร้างร้าน + บัญชีเจ้าของ → พาไปที่ `http://<slug>.localhost:3000` พร้อมล็อกอินให้อัตโนมัติ
+
+หมายเหตุ
+- ระบบชำระเงินเป็น **mock** ทั้งหมด (`src/lib/server/payments.ts`) เมื่อต่อของจริงให้แทนที่การสร้าง charge ด้วย Omise/Stripe และใช้การตรวจลายเซ็นของผู้ให้บริการ
+- ข้อมูลระบบเช่าเก็บที่ `data/db.json` (ไม่ถูก commit) โครงสร้าง tenants / users / orders / webhookEvents / sessions พร้อมย้ายไป PostgreSQL
+- ข้อมูล POS ของแต่ละร้านยังอยู่ใน localStorage ซึ่งแยกตาม subdomain อยู่แล้ว (ฝั่ง backend POS เป็นงานของอีกทีม)
+- ค่าตั้งค่าดูได้ที่ `.env.example`
+
 ## การรันโปรเจกต์
 
 ```bash
