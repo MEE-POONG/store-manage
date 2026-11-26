@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getTodayDateKey, ROLE_LABELS, usePOS } from "@/context/POSContext";
 import PosTerminalView from "@/components/PosTerminalView";
 import InventoryView from "@/components/InventoryView";
@@ -12,6 +12,9 @@ import CashDrawerModal from "@/components/CashDrawerModal";
 import SwitchEmployeeModal from "@/components/SwitchEmployeeModal";
 import {
   BarChart3,
+  LogOut,
+  PartyPopper,
+  X,
   Boxes,
   Lock,
   Receipt,
@@ -38,7 +41,21 @@ function toDateKey(iso: string): string {
   return `${y}-${m}-${day}`;
 }
 
-export default function HomePage() {
+export interface PosTenantInfo {
+  name: string;
+  slug: string;
+  planName: string;
+  ownerEmail: string;
+  periodEnd: string;
+}
+
+export default function PosApp({
+  tenant,
+  welcome = false,
+}: {
+  tenant?: PosTenantInfo;
+  welcome?: boolean;
+}) {
   const {
     isHydrated,
     settings,
@@ -51,6 +68,15 @@ export default function HomePage() {
     openSwitchEmployeeModal,
   } = usePOS();
   const [activeTab, setActiveTab] = useState<ActiveTab>("pos");
+  const [showWelcome, setShowWelcome] = useState(welcome);
+  useEffect(() => {
+    if (welcome) window.history.replaceState(null, "", "/");
+  }, [welcome]);
+
+  const handleLogout = async () => {
+    await fetch("/api/shop/logout", { method: "POST" });
+    window.location.href = "/login";
+  };
 
   const lowStockCount = products.filter(
     (p) => p.isActive && p.stock <= p.minStock
@@ -161,12 +187,15 @@ export default function HomePage() {
               <span className="truncate text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
                 {settings.storeName}
               </span>
-              <span className="hidden rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 md:inline-block">
-                Retail POS
+              <span className="hidden whitespace-nowrap rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 xl:inline-block">
+                {tenant ? tenant.planName : "Retail POS"}
               </span>
             </div>
             <p className="truncate text-[10px] text-slate-400 sm:text-[11px]">
               {settings.branchName}
+              {tenant && (
+                <span className="hidden sm:inline"> · {tenant.slug}.localhost</span>
+              )}
             </p>
           </div>
         </div>
@@ -259,8 +288,43 @@ export default function HomePage() {
               </div>
             </div>
           </button>
+
+          {tenant && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+              title={`ออกจากระบบ (${tenant.ownerEmail})`}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </header>
+
+      {tenant && showWelcome && (
+        <div className="border-b border-emerald-200 bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-3 text-white print:hidden sm:px-6">
+          <div className="mx-auto flex max-w-6xl items-start gap-3">
+            <PartyPopper className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="font-extrabold">ยินดีต้อนรับสู่ {tenant.name}! ร้านของคุณพร้อมใช้งานแล้ว</p>
+              <p className="text-emerald-50">
+                แพ็กเกจ {tenant.planName} · ใช้งานได้ถึง{" "}
+                {new Date(tenant.periodEnd).toLocaleDateString("th-TH", { dateStyle: "long" })} ·
+                ระบบใส่สินค้าตัวอย่างไว้ให้ทดลองขายได้ทันที (แก้ไข/ลบได้ในเมนูสต็อก)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowWelcome(false)}
+              className="rounded-lg p-1 hover:bg-white/15"
+              aria-label="ปิด"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area (padded at bottom on mobile for bottom nav) */}
       <main className="pb-20 lg:pb-0">

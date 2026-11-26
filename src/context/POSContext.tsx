@@ -201,18 +201,56 @@ interface POSContextType {
 
 const POSContext = createContext<POSContextType | undefined>(undefined);
 
-export function POSProvider({ children }: { children: React.ReactNode }) {
+export interface TenantSeed {
+  storeName: string;
+  phone?: string;
+  ownerName?: string;
+}
+
+export function POSProvider({
+  children,
+  tenant,
+}: {
+  children: React.ReactNode;
+  /** ข้อมูลร้านจากระบบเช่า ใช้ตั้งค่าเริ่มต้นครั้งแรกที่เปิดร้าน */
+  tenant?: TenantSeed;
+}) {
+  const SEED_SETTINGS = useMemo<StoreSettings>(
+    () =>
+      tenant
+        ? {
+            ...DEFAULT_SETTINGS,
+            storeName: tenant.storeName,
+            branchName: "สาขาหลัก",
+            phone: tenant.phone || DEFAULT_SETTINGS.phone,
+          }
+        : DEFAULT_SETTINGS,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+  const SEED_EMPLOYEES = useMemo<Employee[]>(
+    () =>
+      tenant?.ownerName
+        ? DEFAULT_EMPLOYEES.map((e, i) =>
+            i === 0
+              ? { ...e, name: `${tenant.ownerName} (เจ้าของร้าน)`, phone: tenant.phone || e.phone }
+              : e
+          )
+        : DEFAULT_EMPLOYEES,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
   const [isHydrated, setIsHydrated] = useState(false);
   const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [sales, setSales] = useState<SaleOrder[]>(DEFAULT_SALES);
   const [stockLogs, setStockLogs] = useState<StockLog[]>(DEFAULT_STOCK_LOGS);
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
-  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<StoreSettings>(SEED_SETTINGS);
   const [cashDrawers, setCashDrawers] = useState<
     Record<string, DailyCashDrawer>
   >(DEFAULT_CASH_DRAWERS);
-  const [employees, setEmployees] = useState<Employee[]>(DEFAULT_EMPLOYEES);
+  const [employees, setEmployees] = useState<Employee[]>(SEED_EMPLOYEES);
   const [currentEmployeeId, setCurrentEmployeeId] = useState<string>(
     DEFAULT_EMPLOYEES[0].id
   );
@@ -342,7 +380,7 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     return (
       employees.find((e) => e.id === currentEmployeeId && e.isActive) ||
       employees.find((e) => e.isActive) ||
-      DEFAULT_EMPLOYEES[0]
+      SEED_EMPLOYEES[0]
     );
   }, [employees, currentEmployeeId]);
 
@@ -921,9 +959,9 @@ export function POSProvider({ children }: { children: React.ReactNode }) {
     setSales(DEFAULT_SALES);
     setStockLogs(DEFAULT_STOCK_LOGS);
     setHeldOrders([]);
-    setSettings(DEFAULT_SETTINGS);
+    setSettings(SEED_SETTINGS);
     setCashDrawers(DEFAULT_CASH_DRAWERS);
-    setEmployees(DEFAULT_EMPLOYEES);
+    setEmployees(SEED_EMPLOYEES);
     setCurrentEmployeeId(DEFAULT_EMPLOYEES[0].id);
     clearCart();
     Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
